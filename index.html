@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+    <title>Image Classifier</title>
+</head>
+<body>
+    <h1>Image Classification</h1>
+    
+    <form id="upload-form" action="{{ url_for('predict') }}" method="POST" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*" capture>
+        <input type="submit" value="Classify">
+    </form>
+
+    <div id="result">
+        <h2>Predictions</h2>
+        <p>Class ID: <span id="class-id"></span></p>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#upload-form').submit(function(e) {
+                e.preventDefault();
+                $.ajax({
+                    type: 'POST',
+                    url: '/predict',
+                    data: new FormData(this),
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+                    success: function(data) {
+                        $('#class-id').text(data.class_id);
+                    },
+                });
+            });
+        });
+    </script>
+</body>
+</html>
