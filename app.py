@@ -5,7 +5,7 @@ from PIL import Image
 import io
 
 # Load the pre-trained image classification model
-model = cv2.dnn.readNetFromONNX('model.onnx')
+model = cv2.dnn.readNetFromONNX('mobilenetv2_100_Opset16.onnx')
 
 app = Flask(__name__)
 
