@@ -1,16 +1,19 @@
 from flask import Flask, Response, render_template_string
 import cv2
 import time
-import yolov5  # Ensure yolov5 is correctly installed and imported
+import yolov5  # Make sure yolov5 is installed and accessible
 
 app = Flask(__name__)
 
 # Load YOLOv5 model
-model = yolov5.load('yolov5m.pt')
-model.conf = 0.25  # Confidence threshold
-model.iou = 0.45   # IoU threshold for NMS
+model = yolov5.load('yolov5s.pt')  # Adjust model path as necessary
+model.conf = 0.35  # Set confidence threshold
+model.iou = 0.5    # Set IoU threshold for NMS
 
-# HTML Template
+# Global variable to hold count of detected attributes
+people_count = {'total': 0}
+
+# HTML Template for serving the video feed and stats
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html>
@@ -49,7 +52,6 @@ def stream_frames():
         return
 
     last_time = 0
-    people_count = {'total': 0}
     try:
         while True:
             ret, frame = cap.read()
@@ -58,17 +60,22 @@ def stream_frames():
                 break
 
             current_time = time.time()
-            if current_time - last_time >= 1:  # Process the frame every second
+            if current_time - last_time >= 0.5:  # Process the frame every 0.5 seconds
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 results = model([rgb_frame], size=640)
                 detections = results.pred[0]
                 
+                # Update global count
                 people_count['total'] = sum(1 for *_, cls in detections if results.names[int(cls)] == 'person')
                 
-                frame = results.render()[0]
+                # Render detections directly onto the frame
+                for *xyxy, conf, cls in detections:
+                    label = f'{results.names[int(cls)]} {conf:.2f}'
+                    cv2.rectangle(frame, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), (255, 0, 0), 2)
+                    cv2.putText(frame, label, (int(xyxy[0]), int(xyxy[1])-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
                 last_time = current_time
 
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             ret, jpeg = cv2.imencode('.jpg', frame)
             if not ret:
                 continue
