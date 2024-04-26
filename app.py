@@ -1,51 +1,53 @@
+from flask import Flask, Response
 import cv2
-import imutils
-from flask import Flask, render_template, Response
+import torch
+import yolov5
+from io import BytesIO
+import base64
+import numpy as np
 
 app = Flask(__name__)
 
-# Initialize the USB camera
-# camera = cv2.VideoCapture(0)
-camera = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+# Load the YOLOv5 model
+model_path = "yolov5m.pt"
+model = yolov5.load(model_path, device="cpu")
+model.conf = 0.25  # Confidence threshold
+model.iou = 0.45   # IOU threshold for NMS
 
-
-# Load the pre-trained person detection model
-HOGCV = cv2.HOGDescriptor()
-HOGCV.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
-
-def detect_people(frame):
-    bounding_box_cordinates, weights = HOGCV.detectMultiScale(frame, winStride=(4, 4), padding=(8, 8), scale=1.03)
-
-    person = 1
-    for x, y, w, h in bounding_box_cordinates:
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        cv2.putText(frame, f'person {person}', (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
-        person += 1
-
-    cv2.putText(frame, 'Status : Detecting ', (40, 40), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 0, 0), 2)
-    cv2.putText(frame, f'Total Persons : {person - 1}', (40, 70), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 0, 0), 2)
+def get_camera_frame():
+    # Initialize the camera
+    cap = cv2.VideoCapture(0)
+    success, frame = cap.read()
+    cap.release()
+    if not success:
+        return None
     return frame
 
-def gen_frames():
-    while True:
-        success, frame = camera.read()
-        if not success:
-            break
-        else:
-            frame = imutils.resize(frame, width=600)
-            frame = detect_people(frame)
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+def detect_persons(image):
+    # Convert the color space from BGR to RGB
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    # Perform inference
+    results = model([image], size=640)
+    # Draw bounding boxes for detected persons
+    results = results.render()
+    return results[0]
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/detect')
+def detect():
+    frame = get_camera_frame()
+    if frame is None:
+        return "Failed to capture image from camera", 400
+    
+    # Detect persons in the frame
+    detected_image = detect_persons(frame)
+    
+    # Convert the color space from RGB back to BGR for correct color rendering
+    detected_image = cv2.cvtColor(detected_image, cv2.COLOR_RGB2BGR)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+    # Encode image for web display
+    _, buffer = cv2.imencode('.jpg', detected_image)
+    image_data = base64.b64encode(buffer).decode('utf-8')
+    return Response(f'<img src="data:image/jpeg;base64,{image_data}" />', mimetype='text/html')
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(host='0.0.0.0', port=8000, debug=True)
