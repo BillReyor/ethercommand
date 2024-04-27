@@ -1,54 +1,85 @@
-# Fast Stream on Raspberry Pi
-
-This repository contains `fast_stream.py`, a Python script for running object detection using YOLOv5 on a Raspberry Pi with an ELP USB camera. Follow these setup instructions to get started.
+```
+# Ethercommand Person Detection App Setup
 
 ## Prerequisites
+- **Raspberry Pi**: Tested on Raspberry Pi 5
+- **Camera**: ELP 4K USB Camera with Microphone Manual Zoom Webcam 2.8-12mm Variable Focus PC Camera Mini UVC USB2.0 Web Camera IMX317 USB Security Camera 8mp Industrial Close-up Camera for Computer Raspberry Pi
+- **OS**: Raspberry Pi OS (Bullseye or later)
 
-Ensure you have a Raspberry Pi with a recent version of Raspberry Pi OS installed and that you have root access.
+## Setup Instructions
 
-## Hardware Setup
+### Connect the Hardware
+- Connect the ELP USB camera to your Raspberry Pi.
 
-1. **Connect the Camera**:
-   Connect your ELP USB camera to one of the USB ports on the Raspberry Pi.
+### Update System and Install Dependencies
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential cmake pkg-config libjpeg-dev libtiff5-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran
+```
 
-## Software Setup
+### Install pyenv
+```bash
+curl https://pyenv.run | bash
+```
 
-2. **Install pyenv**:
-   Install `pyenv` to manage Python versions. Run the following command in the terminal:
-   ```bash
-   curl https://pyenv.run | bash
-   ```
+### Configure Environment
+Add to `~/.bashrc`:
+```bash
+export PATH="$HOME/.pyenv/bin:$PATH"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+```
+Restart your shell or run:
+```bash
+source ~/.bashrc
+```
 
-3. **Configure Environment**:
-   Add `pyenv` to your shell by appending the following lines to your `~/.bashrc` file:
-   ```bash
-   export PATH="$HOME/.pyenv/bin:$PATH"
-   eval "$(pyenv init -)"
-   eval "$(pyenv virtualenv-init -)"
-   ```
+### Python Setup
+Install Python and create a virtual environment:
+```bash
+pyenv install 3.11.2
+pyenv virtualenv 3.11.2 ethercommand
+pyenv activate ethercommand
+```
 
-4. **Reload Profile**:
-   Apply the changes by sourcing your profile:
-   ```bash
-   source ~/.bashrc
-   ```
+### Get the App
+Clone or download Ethercommand project files, navigate to the directory, and install Python packages:
+```bash
+pip install -r requirements.txt
+```
 
-5. **Install Python and Dependencies**:
-   Install Python 3.11.2 and set up a virtual environment for the project:
-   ```bash
-   pyenv install 3.11.2
-   pyenv virtualenv 3.11.2 ethercommand
-   pyenv activate ethercommand
-   pip install -r requirements.txt
-   pyenv deactivate ethercommand
-   ```
+### Compile OpenCV
+Optimize OpenCV for Raspberry Pi:
+```bash
+git clone https://github.com/opencv/opencv.git
+cd opencv
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_INSTALL_PREFIX=/usr/local -DENABLE_NEON=ON -DENABLE_VFPV3=ON -DBUILD_TESTS=OFF -DINSTALL_PYTHON_EXAMPLES=OFF -DBUILD_EXAMPLES=OFF ..
+make -j4
+sudo make install
+```
 
-## Running the Script
+## Running the App
+Navigate to the project directory, ensure the environment is activated and run:
+```bash
+pyenv activate ethercommand
+python app.py
+```
+Access the app via the Raspberry Pi's IP address in a web browser. To stop, press `Ctrl+C`. Deactivate the environment:
+```bash
+pyenv deactivate
+```
 
-To run the script, ensure you are in the `ethercommand` environment and execute:
-   ```bash
-   python fast_stream.py
-   ```
+## Troubleshooting
+- If the camera is not detected, check the camera index in the script.
+- Ensure the camera is properly connected and the virtual environment is activated before running the app.
+- Reinstall Python packages if you encounter issues.
 
-This will start the Flask application, and you can view the output by accessing the IP address of your Raspberry Pi in a web browser.
+## Notes
+- Uses OpenCV's HOG descriptor with an SVM classifier for person detection.
+- Isolated environment management with pyenv.
+- Optimizing OpenCV enhances performance on the Raspberry Pi.
+- Modify and extend the app as needed.
+
+Happy person detecting!
 ```
