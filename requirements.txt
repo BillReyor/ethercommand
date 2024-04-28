@@ -1,7 +1,7 @@
-yolov9pip
 flask
 torch>=1.7.1
 torchvision
-pillow
 numpy
+Pillow
 opencv-python-headless
+yolov9pip
