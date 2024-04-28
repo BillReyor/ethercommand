@@ -4,4 +4,4 @@ torchvision
 numpy
 Pillow
 opencv-python-headless
-yolov9pip
+yolov9
