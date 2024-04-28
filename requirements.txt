@@ -3,5 +3,5 @@ torch>=1.7.1
 torchvision
 numpy
 Pillow
-opencv-python-headless
+opencv-python-headless>=4.9.0
 yolov9
