@@ -3,5 +3,5 @@ torch
 transformers
 pillow
 #yolov5
-yolo9
+yolov9
 flask
