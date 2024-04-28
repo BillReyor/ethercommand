@@ -1,7 +1,7 @@
-#opencv-python
-torch
-transformers
-pillow
-#yolov5
-yolov9
-flask
+
+torch>=1.7.1  # Ensure compatibility with newer PyTorch features
+torchvision  # Required for image transformations with PyTorch
+pillow  # Useful for image manipulation
+flask  # Flask is needed for your web app
+numpy  # Often used for numerical operations, may be needed implicitly
+opencv-python-headless  # Use the headless version to avoid GUI dependencies in server environments
